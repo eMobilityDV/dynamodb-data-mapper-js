@@ -5,7 +5,7 @@ import {
     TableStateElement,
     ThrottledTableConfiguration,
 } from './types';
-import DynamoDB = require('aws-sdk/clients/dynamodb');
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 if (Symbol && !Symbol.asyncIterator) {
     (Symbol as any).asyncIterator = Symbol.for("__@@asyncIterator__");
@@ -174,7 +174,7 @@ export abstract class BatchOperation<
         }
 
         this.throttled.delete(backoffWaiter);
-        delete table.tableThrottling;
+        (table as TableState<Element>).tableThrottling = undefined;
     }
 
     private async getNext(): Promise<IteratorResult<[string, Element]>> {
@@ -211,7 +211,7 @@ export abstract class BatchOperation<
                 ]);
 
             if (isIteratorResult(toProcess)) {
-                this.sourceDone = toProcess.done;
+                this.sourceDone = toProcess.done ?? false;
                 if (!this.sourceDone) {
                     this.addToSendQueue(toProcess.value);
                     this.sourceNext = this.iterator.next();

@@ -3,7 +3,6 @@ import {
     ReadConsistency,
     StringToAnyObjectMap,
     SyncOrAsyncIterable,
-    VERSION,
     WriteType,
 } from './constants';
 import { ItemNotFoundException } from './ItemNotFoundException';
@@ -75,19 +74,25 @@ import {
 } from '@aws/dynamodb-expressions';
 import {
     AttributeDefinition,
-    AttributeMap,
+    AttributeValue as DdbAttributeValue,
     CreateGlobalSecondaryIndexAction,
     DeleteItemInput,
+    DynamoDB,
     GetItemInput,
-    GlobalSecondaryIndexList,
+    GlobalSecondaryIndex,
     KeySchemaElement,
-    LocalSecondaryIndexList,
+    LocalSecondaryIndex,
     Projection,
     ProvisionedThroughput,
     PutItemInput,
     UpdateItemInput,
-} from 'aws-sdk/clients/dynamodb';
-import DynamoDB = require('aws-sdk/clients/dynamodb');
+    waitUntilTableExists,
+    waitUntilTableNotExists,
+} from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, DdbAttributeValue>;
+type GlobalSecondaryIndexList = GlobalSecondaryIndex[];
+type LocalSecondaryIndexList = LocalSecondaryIndex[];
 
 require('./asyncIteratorSymbolPolyfill');
 
@@ -111,7 +116,6 @@ export class DataMapper {
         skipVersionCheck = false,
         tableNamePrefix = ''
     }: DataMapperConfiguration) {
-        client.config.customUserAgent = ` dynamodb-data-mapper-js/${VERSION}`;
         this.client = client;
         this.readConsistency = readConsistency;
         this.skipVersionCheck = skipVersionCheck;
@@ -248,9 +252,9 @@ export class DataMapper {
 
         for await (const [tableName, {DeleteRequest, PutRequest}] of batch) {
             const {keyProperties, itemSchemata} = state[tableName];
-            const attributes = PutRequest
+            const attributes = (PutRequest
                 ? PutRequest.Item
-                : (DeleteRequest || {Key: {}}).Key
+                : (DeleteRequest || {Key: {}}).Key) as AttributeMap;
             const {
                 constructor,
                 schema,
@@ -315,10 +319,10 @@ export class DataMapper {
                     KMSMasterKeyId: sseSpecification.kmsMasterKeyId,
                 }
                 : { Enabled: false },
-        }).promise();
+        });
 
         if (TableStatus !== 'ACTIVE') {
-            await this.client.waitFor('tableExists', {TableName}).promise();
+            await waitUntilTableExists({ client: this.client, maxWaitTime: 600 }, { TableName });
         }
     }
 
@@ -361,10 +365,10 @@ export class DataMapper {
             }],
             TableName,
             AttributeDefinitions: attributeDefinitionList(attributes),
-        }).promise();
+        });
 
         if (TableStatus !== 'ACTIVE') {
-            await this.client.waitFor('tableExists', {TableName}).promise();
+            await waitUntilTableExists({ client: this.client, maxWaitTime: 600 }, { TableName });
         }
     }
 
@@ -390,7 +394,7 @@ export class DataMapper {
         try {
             const {
                 Table: {GlobalSecondaryIndexes } = {GlobalSecondaryIndexes: []}
-            } = await this.client.describeTable({TableName}).promise();
+            } = await this.client.describeTable({TableName});
             const indexSearch = GlobalSecondaryIndexes === undefined ? [] : GlobalSecondaryIndexes.filter(function(index) {
                 return index.IndexName === indexName;
             });
@@ -485,7 +489,7 @@ export class DataMapper {
             }
         }
 
-        const {Attributes} = await this.client.deleteItem(req).promise();
+        const {Attributes} = await this.client.deleteItem(req);
         if (Attributes) {
             return unmarshallItem<T>(
                 schema,
@@ -507,8 +511,8 @@ export class DataMapper {
      */
     async deleteTable(valueConstructor: ZeroArgumentsConstructor<any>) {
         const TableName = this.getTableName(valueConstructor.prototype);
-        await this.client.deleteTable({TableName}).promise();
-        await this.client.waitFor('tableNotExists', {TableName}).promise();
+        await this.client.deleteTable({TableName});
+        await waitUntilTableNotExists({ client: this.client, maxWaitTime: 600 }, { TableName });
     }
 
     /**
@@ -531,13 +535,13 @@ export class DataMapper {
         try {
             const {
                 Table: {TableStatus} = {TableStatus: 'CREATING'}
-            } = await this.client.describeTable({TableName}).promise();
+            } = await this.client.describeTable({TableName});
 
             if (TableStatus !== 'ACTIVE') {
-                await this.client.waitFor('tableExists', {TableName}).promise();
+                await waitUntilTableExists({ client: this.client, maxWaitTime: 600 }, { TableName });
             }
         } catch (err) {
-            if (err.name === 'ResourceNotFoundException') {
+            if ((err as any).name === 'ResourceNotFoundException') {
                 await this.createTable(valueConstructor, options);
             } else {
                 throw err;
@@ -563,20 +567,18 @@ export class DataMapper {
         try {
             const {
                 Table: {TableStatus: status} = {TableStatus: 'CREATING'}
-            } = await this.client.describeTable({TableName}).promise();
+            } = await this.client.describeTable({TableName});
 
             if (status === 'DELETING') {
-                await this.client.waitFor('tableNotExists', {TableName})
-                    .promise();
+                await waitUntilTableNotExists({ client: this.client, maxWaitTime: 600 }, { TableName });
                 return;
             } else if (status === 'CREATING' || status === 'UPDATING') {
-                await this.client.waitFor('tableExists', {TableName})
-                    .promise();
+                await waitUntilTableExists({ client: this.client, maxWaitTime: 600 }, { TableName });
             }
 
             await this.deleteTable(valueConstructor);
         } catch (err) {
-            if (err.name !== 'ResourceNotFoundException') {
+            if ((err as any).name !== 'ResourceNotFoundException') {
                 throw err;
             }
         }
@@ -643,7 +645,7 @@ export class DataMapper {
             }
         }
 
-        const {Item} = await this.client.getItem(req).promise();
+        const {Item} = await this.client.getItem(req);
         if (Item) {
             return unmarshallItem<T>(
                 schema,
@@ -768,12 +770,12 @@ export class DataMapper {
                         key,
                         inputMember
                     );
-                    if (req.Item[attributeName]) {
-                        req.Item[attributeName].N = (
-                            Number(req.Item[attributeName].N) + 1
+                    if (req.Item![attributeName]) {
+                        (req.Item![attributeName] as any).N = (
+                            Number((req.Item![attributeName] as any).N) + 1
                         ).toString();
                     } else {
-                        req.Item[attributeName] = {N: "0"};
+                        req.Item![attributeName] = {N: "0"};
                     }
 
                     condition = condition
@@ -800,11 +802,11 @@ export class DataMapper {
             }
         }
 
-        await this.client.putItem(req).promise();
+        await this.client.putItem(req);
 
         return unmarshallItem<T>(
             schema,
-            req.Item,
+            req.Item as AttributeMap,
             item.constructor as ZeroArgumentsConstructor<T>
         );
     }
@@ -1101,7 +1103,7 @@ export class DataMapper {
             req.ExpressionAttributeValues = attributes.values;
         }
 
-        const rawResponse = await this.client.updateItem(req).promise();
+        const rawResponse = await this.client.updateItem(req);
         if (rawResponse.Attributes) {
             return unmarshallItem<T>(schema, rawResponse.Attributes, valueConstructor);
         }

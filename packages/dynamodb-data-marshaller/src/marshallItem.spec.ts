@@ -1,7 +1,6 @@
 import {marshallItem} from "./marshallItem";
 import {Schema} from "./Schema";
 import {CustomType} from "./SchemaType";
-import objectContaining = jasmine.objectContaining;
 import {BinarySet} from "@aws/dynamodb-auto-marshaller";
 
 describe('marshallItem', () => {
@@ -314,7 +313,7 @@ describe('marshallItem', () => {
             const schema: Schema = {aDate: {type: 'Date'}};
 
             expect(() => marshallItem(schema, {aDate: new ArrayBuffer(10)}))
-                .toThrow(objectContaining({invalidValue: new ArrayBuffer(10)}));
+                .toThrow(expect.objectContaining({invalidValue: new ArrayBuffer(10)}));
         });
     });
 

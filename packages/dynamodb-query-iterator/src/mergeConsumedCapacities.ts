@@ -1,8 +1,6 @@
-import {
-    Capacity,
-    ConsumedCapacity,
-    SecondaryIndexesCapacityMap,
-} from 'aws-sdk/clients/dynamodb';
+import { Capacity, ConsumedCapacity } from '@aws-sdk/client-dynamodb';
+
+type SecondaryIndexesCapacityMap = Record<string, Capacity>;
 
 /**
  * @internal

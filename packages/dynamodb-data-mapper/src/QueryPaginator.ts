@@ -15,8 +15,7 @@ import {
     isConditionExpression,
     isConditionExpressionPredicate,
 } from '@aws/dynamodb-expressions';
-import { QueryInput } from 'aws-sdk/clients/dynamodb';
-import DynamoDB = require('aws-sdk/clients/dynamodb');
+import { DynamoDB, QueryInput } from '@aws-sdk/client-dynamodb';
 
 /**
  * Iterates over each page of items returned by a DynamoDB query until no more

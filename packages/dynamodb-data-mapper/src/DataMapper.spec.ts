@@ -15,22 +15,28 @@ import {
 import {ItemNotFoundException} from "./ItemNotFoundException";
 import {BatchGetOptions, ParallelScanState, GlobalSecondaryIndexOptions} from './index';
 import {
-    BatchGetItemInput,
-    BatchWriteItemInput,
     DescribeTableOutput,
     GetItemOutput,
-    PutItemOutput
-} from "aws-sdk/clients/dynamodb";
+    PutItemOutput,
+    waitUntilTableExists,
+    waitUntilTableNotExists,
+} from '@aws-sdk/client-dynamodb';
+
+jest.mock('@aws-sdk/client-dynamodb', () => Object.assign(
+    {},
+    jest.requireActual('@aws-sdk/client-dynamodb'),
+    {
+        waitUntilTableExists: jest.fn(() => Promise.resolve({})),
+        waitUntilTableNotExists: jest.fn(() => Promise.resolve({})),
+    }
+));
 
 type BinaryValue = ArrayBuffer|ArrayBufferView;
 
 describe('DataMapper', () => {
-    it('should set the customUserAgent config property on the client', () => {
-        const client: any = {config: {}};
-        new DataMapper({client});
-
-        expect(client.config.customUserAgent)
-            .toMatch('dynamodb-data-mapper-js/');
+    beforeEach(() => {
+        (waitUntilTableExists as jest.Mock).mockClear();
+        (waitUntilTableNotExists as jest.Mock).mockClear();
     });
 
     describe('#batchDelete', () => {
@@ -39,7 +45,7 @@ describe('DataMapper', () => {
         }));
         const mockDynamoDbClient = {
             config: {},
-            batchWriteItem: jest.fn(() => ({promise: promiseFunc})),
+            batchWriteItem: jest.fn(() => promiseFunc()),
         };
 
         beforeEach(() => {
@@ -148,10 +154,10 @@ describe('DataMapper', () => {
 
                 const {calls} = mockDynamoDbClient.batchWriteItem.mock;
                 expect(calls.length).toBe(4);
-                const callCount: {[key: string]: number} = (calls as Array<Array<BatchWriteItemInput>>).reduce(
+                const callCount: {[key: string]: number} = (calls as any[]).reduce(
                     (
                         keyUseCount: {[key: string]: number},
-                        [{RequestItems: {foo}}]
+                        [{RequestItems: {foo}}]: any
                     ) => {
                         for (const {DeleteRequest: {Key: {fizz: {N: key}}}} of (foo as any)) {
                             if (key in keyUseCount) {
@@ -179,7 +185,7 @@ describe('DataMapper', () => {
         }));
         const mockDynamoDbClient = {
             config: {},
-            batchGetItem: jest.fn(() => ({promise: promiseFunc})),
+            batchGetItem: jest.fn(() => promiseFunc()),
         };
 
         beforeEach(() => {
@@ -491,10 +497,10 @@ describe('DataMapper', () => {
                 expect(itemsReturned).toBe(325);
 
                 const {calls} = mockDynamoDbClient.batchGetItem.mock;
-                const callCount: {[key: string]: number} = (calls as Array<Array<BatchGetItemInput>>).reduce(
+                const callCount: {[key: string]: number} = (calls as any[]).reduce(
                     (
                         keyUseCount: {[key: string]: number},
-                        [{RequestItems: {foo: {Keys}}}]
+                        [{RequestItems: {foo: {Keys}}}]: any
                     ) => {
                         for (const {fizz: {N: key}} of (Keys as any)) {
                             if (key in keyUseCount) {
@@ -522,7 +528,7 @@ describe('DataMapper', () => {
         }));
         const mockDynamoDbClient = {
             config: {},
-            batchWriteItem: jest.fn(() => ({promise: promiseFunc})),
+            batchWriteItem: jest.fn(() => promiseFunc()),
         };
 
         const mapper = new DataMapper({
@@ -651,10 +657,10 @@ describe('DataMapper', () => {
 
                 const {calls} = mockDynamoDbClient.batchWriteItem.mock;
                 expect(calls.length).toBe(4);
-                const callCount: {[key: string]: number} = (calls as Array<Array<BatchWriteItemInput>>).reduce(
+                const callCount: {[key: string]: number} = (calls as any[]).reduce(
                     (
                         keyUseCount: {[key: string]: number},
-                        [{RequestItems: {foo}}]
+                        [{RequestItems: {foo}}]: any
                     ) => {
                         for (const {PutRequest: {Item: {fizz: {N: key}}}} of (foo as any)) {
                             if (key in keyUseCount) {
@@ -677,19 +683,15 @@ describe('DataMapper', () => {
     });
 
     describe('#createGlobalSecondaryIndex', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const updateTablePromiseFunc = jest.fn(() => Promise.resolve({}));
         const mockDynamoDbClient = {
             config: {},
-            updateTable: jest.fn(() => ({promise: updateTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            updateTable: jest.fn(() => updateTablePromiseFunc()),
         };
 
         beforeEach(() => {
             updateTablePromiseFunc.mockClear();
             mockDynamoDbClient.updateTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         const mapper = new DataMapper({
@@ -769,26 +771,23 @@ describe('DataMapper', () => {
                 ]
             ]);
 
-            expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                [ 'tableExists', { TableName: 'foo' } ],
-            ]);
+            expect(waitUntilTableExists).toHaveBeenCalledWith(
+                { client: mockDynamoDbClient, maxWaitTime: 600 },
+                { TableName: 'foo' }
+            );
         });
     })
 
     describe('#createTable', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const createTablePromiseFunc = jest.fn(() => Promise.resolve({}));
         const mockDynamoDbClient = {
             config: {},
-            createTable: jest.fn(() => ({promise: createTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            createTable: jest.fn(() => createTablePromiseFunc()),
         };
 
         beforeEach(() => {
             createTablePromiseFunc.mockClear();
             mockDynamoDbClient.createTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         const mapper = new DataMapper({
@@ -835,9 +834,10 @@ describe('DataMapper', () => {
                 ]
             ]);
 
-            expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                [ 'tableExists', { TableName: 'foo' } ],
-            ]);
+            expect(waitUntilTableExists).toHaveBeenCalledWith(
+                { client: mockDynamoDbClient, maxWaitTime: 600 },
+                { TableName: 'foo' }
+            );
         });
 
         it(
@@ -854,7 +854,7 @@ describe('DataMapper', () => {
 
                 expect(mockDynamoDbClient.createTable.mock.calls.length).toBe(1);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
 
@@ -1304,7 +1304,7 @@ describe('DataMapper', () => {
         const promiseFunc = jest.fn(() => Promise.resolve({Attributes: {}}));
         const mockDynamoDbClient = {
             config: {},
-            deleteItem: jest.fn(() => ({promise: promiseFunc})),
+            deleteItem: jest.fn(() => promiseFunc()),
         };
 
         beforeEach(() => {
@@ -1752,19 +1752,15 @@ describe('DataMapper', () => {
     });
 
     describe('#deleteTable', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const deleteTablePromiseFunc = jest.fn(() => Promise.resolve({}));
         const mockDynamoDbClient = {
             config: {},
-            deleteTable: jest.fn(() => ({promise: deleteTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            deleteTable: jest.fn(() => deleteTablePromiseFunc()),
         };
 
         beforeEach(() => {
             deleteTablePromiseFunc.mockClear();
             mockDynamoDbClient.deleteTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         const mapper = new DataMapper({
@@ -1788,19 +1784,19 @@ describe('DataMapper', () => {
                 [ { TableName: 'foo' } ],
             ]);
 
-            expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                [ 'tableNotExists', { TableName: 'foo' } ],
-            ]);
+            expect(waitUntilTableNotExists).toHaveBeenCalledWith(
+                { client: mockDynamoDbClient, maxWaitTime: 600 },
+                { TableName: 'foo' }
+            );
         });
     });
 
 
     describe('#ensureGlobalSecondaryIndexExists', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const describeTablePromiseFunc = jest.fn(() => Promise.resolve({
             Table: {
                 TableStatus: 'ACTIVE',
-                GlobalSecondaryIndexes: [ 
+                GlobalSecondaryIndexes: [
                     {
                         IndexName: 'DescriptionIndex'
                     }
@@ -1809,8 +1805,7 @@ describe('DataMapper', () => {
         } as DescribeTableOutput));
         const mockDynamoDbClient = {
             config: {},
-            describeTable: jest.fn(() => ({promise: describeTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            describeTable: jest.fn(() => describeTablePromiseFunc()),
         };
 
         const mapper = new DataMapper({
@@ -1821,8 +1816,6 @@ describe('DataMapper', () => {
         beforeEach(() => {
             (mapper.createGlobalSecondaryIndex as any).mockClear();
             mockDynamoDbClient.describeTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         let tableName = 'foo';
@@ -1867,7 +1860,7 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
                 expect((mapper.createGlobalSecondaryIndex as any).mock.calls.length).toBe(0);
             }
         );
@@ -1891,7 +1884,7 @@ describe('DataMapper', () => {
                 ]);
 
                 expect((mapper.createGlobalSecondaryIndex as any).mock.calls.length).toBe(1);
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
 
@@ -1918,20 +1911,18 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
     });
 
     describe('#ensureTableExists', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const describeTablePromiseFunc = jest.fn(() => Promise.resolve({
             Table: { TableStatus: 'ACTIVE' }
         } as DescribeTableOutput));
         const mockDynamoDbClient = {
             config: {},
-            describeTable: jest.fn(() => ({promise: describeTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            describeTable: jest.fn(() => describeTablePromiseFunc()),
         };
 
         const mapper = new DataMapper({
@@ -1942,8 +1933,6 @@ describe('DataMapper', () => {
         beforeEach(() => {
             (mapper.createTable as any).mockClear();
             mockDynamoDbClient.describeTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         let tableName = 'foo';
@@ -1969,7 +1958,7 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
                 expect((mapper.createTable as any).mock.calls.length).toBe(0);
             }
         );
@@ -1989,7 +1978,7 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(1);
+                expect(waitUntilTableExists as jest.Mock).toHaveBeenCalledTimes(1);
                 expect((mapper.createTable as any).mock.calls.length).toBe(0);
             }
         );
@@ -2014,7 +2003,7 @@ describe('DataMapper', () => {
                     [Item, options],
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
 
@@ -2036,18 +2025,16 @@ describe('DataMapper', () => {
                 ]);
 
                 expect((mapper.createTable as any).mock.calls.length).toBe(0);
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
     });
 
     describe('#ensureTableNotExists', () => {
-        const waitPromiseFunc = jest.fn(() => Promise.resolve());
         const describeTablePromiseFunc = jest.fn(() => Promise.resolve({}));
         const mockDynamoDbClient = {
             config: {},
-            describeTable: jest.fn(() => ({promise: describeTablePromiseFunc})),
-            waitFor: jest.fn(() => ({promise: waitPromiseFunc})),
+            describeTable: jest.fn(() => describeTablePromiseFunc()),
         };
 
         const mapper = new DataMapper({
@@ -2058,8 +2045,6 @@ describe('DataMapper', () => {
         beforeEach(() => {
             (mapper.deleteTable as any).mockClear();
             mockDynamoDbClient.describeTable.mockClear();
-            waitPromiseFunc.mockClear();
-            mockDynamoDbClient.waitFor.mockClear();
         });
 
         let tableName = 'foo';
@@ -2088,7 +2073,8 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
+                expect(waitUntilTableNotExists as jest.Mock).not.toHaveBeenCalled();
                 expect((mapper.deleteTable as any).mock.calls.length).toBe(0);
             }
         );
@@ -2105,9 +2091,10 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                    [ 'tableNotExists', { TableName: tableName } ],
-                ]);
+                expect(waitUntilTableNotExists).toHaveBeenCalledWith(
+                    { client: mockDynamoDbClient, maxWaitTime: 600 },
+                    { TableName: tableName }
+                );
                 expect((mapper.deleteTable as any).mock.calls.length).toBe(0);
             }
         );
@@ -2122,7 +2109,8 @@ describe('DataMapper', () => {
                 [{ TableName: tableName }]
             ]);
 
-            expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+            expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
+            expect(waitUntilTableNotExists as jest.Mock).not.toHaveBeenCalled();
             expect((mapper.deleteTable as any).mock.calls.length).toBe(1);
         });
 
@@ -2138,9 +2126,10 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                    [ 'tableExists', { TableName: tableName } ],
-                ]);
+                expect(waitUntilTableExists).toHaveBeenCalledWith(
+                    { client: mockDynamoDbClient, maxWaitTime: 600 },
+                    { TableName: tableName }
+                );
                 expect((mapper.deleteTable as any).mock.calls.length).toBe(1);
             }
         );
@@ -2157,9 +2146,10 @@ describe('DataMapper', () => {
                     [{ TableName: tableName }]
                 ]);
 
-                expect(mockDynamoDbClient.waitFor.mock.calls).toEqual([
-                    [ 'tableExists', { TableName: tableName } ],
-                ]);
+                expect(waitUntilTableExists).toHaveBeenCalledWith(
+                    { client: mockDynamoDbClient, maxWaitTime: 600 },
+                    { TableName: tableName }
+                );
                 expect((mapper.deleteTable as any).mock.calls.length).toBe(1);
             }
         );
@@ -2180,7 +2170,8 @@ describe('DataMapper', () => {
                 ]);
 
                 expect((mapper.deleteTable as any).mock.calls.length).toBe(0);
-                expect(mockDynamoDbClient.waitFor.mock.calls.length).toBe(0);
+                expect(waitUntilTableExists as jest.Mock).not.toHaveBeenCalled();
+                expect(waitUntilTableNotExists as jest.Mock).not.toHaveBeenCalled();
             }
         );
     });
@@ -2189,7 +2180,7 @@ describe('DataMapper', () => {
         const promiseFunc = jest.fn(() => Promise.resolve({Item: {}} as GetItemOutput));
         const mockDynamoDbClient = {
             config: {},
-            getItem: jest.fn(() => ({promise: promiseFunc})),
+            getItem: jest.fn(() => promiseFunc()),
         };
 
         beforeEach(() => {
@@ -2539,7 +2530,7 @@ describe('DataMapper', () => {
             promiseFunc.mockImplementation(() => Promise.resolve({Items: []}));
             mockDynamoDbClient.scan.mockClear();
             mockDynamoDbClient.scan.mockImplementation(() => {
-                return {promise: promiseFunc};
+                return promiseFunc();
             });
         });
 
@@ -2783,7 +2774,7 @@ describe('DataMapper', () => {
         const promiseFunc = jest.fn(() => Promise.resolve({Item: {}} as PutItemOutput));
         const mockDynamoDbClient = {
             config: {},
-            putItem: jest.fn(() => ({promise: promiseFunc})),
+            putItem: jest.fn(() => promiseFunc()),
         };
 
         beforeEach(() => {
@@ -3136,7 +3127,7 @@ describe('DataMapper', () => {
             promiseFunc.mockClear();
             promiseFunc.mockImplementation(() => Promise.resolve({Attributes: {}}));
             mockDynamoDbClient.query.mockClear();
-            mockDynamoDbClient.query.mockImplementation(() => ({promise: promiseFunc}));
+            mockDynamoDbClient.query.mockImplementation(() => promiseFunc());
         });
 
         const mapper = new DataMapper({
@@ -3669,7 +3660,7 @@ describe('DataMapper', () => {
             promiseFunc.mockImplementation(() => Promise.resolve({Items: []}));
             mockDynamoDbClient.scan.mockClear();
             mockDynamoDbClient.scan.mockImplementation(() => {
-                return {promise: promiseFunc};
+                return promiseFunc();
             });
         });
 
@@ -4115,7 +4106,7 @@ describe('DataMapper', () => {
             promiseFunc.mockClear();
             promiseFunc.mockImplementation(() => Promise.resolve({Attributes: {}}));
             mockDynamoDbClient.updateItem.mockClear();
-            mockDynamoDbClient.updateItem.mockImplementation(() => ({promise: promiseFunc}));
+            mockDynamoDbClient.updateItem.mockImplementation(() => promiseFunc());
         });
 
         const mapper = new DataMapper({

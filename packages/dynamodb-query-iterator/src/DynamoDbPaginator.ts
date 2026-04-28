@@ -1,7 +1,9 @@
 import { DynamoDbPaginatorInterface } from './DynamoDbPaginatorInterface';
 import { DynamoDbResultsPage } from './DynamoDbResultsPage';
 import { mergeConsumedCapacities } from './mergeConsumedCapacities';
-import { ConsumedCapacity, Key } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue, ConsumedCapacity } from '@aws-sdk/client-dynamodb';
+
+type Key = Record<string, AttributeValue>;
 
 if (Symbol && !Symbol.asyncIterator) {
     (Symbol as any).asyncIterator = Symbol.for("__@@asyncIterator__");

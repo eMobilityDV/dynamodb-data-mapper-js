@@ -1,7 +1,6 @@
 import { DynamoDbPaginator } from './DynamoDbPaginator';
 import { DynamoDbResultsPage } from './DynamoDbResultsPage';
-import { ScanInput } from 'aws-sdk/clients/dynamodb';
-import DynamoDB = require('aws-sdk/clients/dynamodb');
+import { DynamoDB, ScanInput } from '@aws-sdk/client-dynamodb';
 
 export class ScanPaginator extends DynamoDbPaginator {
     private nextRequest?: ScanInput;
@@ -18,32 +17,25 @@ export class ScanPaginator extends DynamoDbPaginator {
         };
     }
 
-    protected getNext(): Promise<IteratorResult<DynamoDbResultsPage>> {
+    protected async getNext(): Promise<IteratorResult<DynamoDbResultsPage>> {
         if (this.nextRequest) {
-            return this.client.scan({
+            const output = await this.client.scan({
                 ...this.nextRequest,
                 Limit: this.getNextPageSize(this.nextRequest.Limit)
-            })
-                .promise()
-                .then(output => {
-                    if (this.nextRequest && output.LastEvaluatedKey) {
-                        this.nextRequest = {
-                            ...this.nextRequest,
-                            ExclusiveStartKey: output.LastEvaluatedKey
-                        };
-                    } else {
-                        this.nextRequest = undefined;
-                    }
+            });
 
-                    return Promise.resolve({
-                        value: output,
-                        done: false
-                    });
-                });
+            if (this.nextRequest && output.LastEvaluatedKey) {
+                this.nextRequest = {
+                    ...this.nextRequest,
+                    ExclusiveStartKey: output.LastEvaluatedKey
+                };
+            } else {
+                this.nextRequest = undefined;
+            }
+
+            return { value: output, done: false };
         }
 
-        return Promise.resolve(
-            {done: true} as IteratorResult<DynamoDbResultsPage>
-        );
+        return {done: true} as IteratorResult<DynamoDbResultsPage>;
     }
 }

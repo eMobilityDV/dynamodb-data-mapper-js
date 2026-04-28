@@ -8,13 +8,12 @@ import {
 } from "./SchemaType";
 import {InvalidSchemaError} from "./InvalidSchemaError";
 import {BinarySet, Marshaller} from "@aws/dynamodb-auto-marshaller";
-import {
-    AttributeMap,
-    AttributeValue,
-    AttributeValueList,
-    NumberSetAttributeValue,
-    StringSetAttributeValue,
-} from "aws-sdk/clients/dynamodb";
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
+type AttributeValueList = AttributeValue[];
+type NumberSetAttributeValue = string[];
+type StringSetAttributeValue = string[];
 
 /**
  * Unmarshall a DynamoDB item into a JavaScript value.
@@ -111,7 +110,7 @@ function unmarshallValue(schemaType: SchemaType, input: AttributeValue): any {
                 default:
                     throw new InvalidSchemaError(
                         schemaType,
-                        `Unrecognized set member type: ${schemaType.memberType}`
+                        `Unrecognized set member type: ${(schemaType as any).memberType}`
                     );
             }
         case 'String':

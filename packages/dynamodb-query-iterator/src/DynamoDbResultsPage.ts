@@ -1,8 +1,7 @@
-import {
-    AttributeMap,
-    ConsumedCapacity,
-    Key,
-} from "aws-sdk/clients/dynamodb";
+import { AttributeValue, ConsumedCapacity } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
+type Key = Record<string, AttributeValue>;
 
 export interface DynamoDbResultsPage {
     /**

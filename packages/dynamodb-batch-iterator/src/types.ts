@@ -1,12 +1,11 @@
 import {
-    AttributeMap,
-    ConsistentRead,
+    AttributeValue,
     DeleteRequest,
-    ExpressionAttributeNameMap,
-    ProjectionExpression,
     PutRequest,
-    WriteRequest as DynamoDbWriteRequest
-} from "aws-sdk/clients/dynamodb";
+    WriteRequest as DynamoDbWriteRequest,
+} from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
 
 /**
  * A synchronous or asynchronous iterable.
@@ -24,11 +23,11 @@ export interface BatchState<Element extends TableStateElement> {
  * @internal
  */
 export interface TableState<Element extends TableStateElement> {
-    attributeNames?: ExpressionAttributeNameMap;
+    attributeNames?: Record<string, string>;
     backoffFactor: number;
-    consistentRead?: ConsistentRead;
+    consistentRead?: boolean;
     name: string;
-    projection?: ProjectionExpression;
+    projection?: string;
     tableThrottling?: TableThrottlingTracker<Element>;
 }
 

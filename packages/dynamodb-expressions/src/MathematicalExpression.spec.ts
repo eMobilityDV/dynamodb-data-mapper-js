@@ -2,10 +2,9 @@ import { AttributePath } from './AttributePath';
 import { ExpressionAttributes } from './ExpressionAttributes';
 import { FunctionExpression } from './FunctionExpression';
 import { MathematicalExpression } from './MathematicalExpression';
-import {
-    ExpressionAttributeNameMap,
-    ExpressionAttributeValueMap
-} from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+type ExpressionAttributeNameMap = Record<string, string>;
+type ExpressionAttributeValueMap = Record<string, AttributeValue>;
 
 describe('MathematicalExpression', () => {
     const validExpressions: Array<[

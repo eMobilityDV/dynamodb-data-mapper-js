@@ -1,5 +1,7 @@
 import {ExpressionAttributes} from "./ExpressionAttributes";
-import {ExpressionAttributeValueMap} from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type ExpressionAttributeValueMap = Record<string, AttributeValue>;
 import {AttributePath} from "./AttributePath";
 
 describe('ExpressionAttributes', () => {

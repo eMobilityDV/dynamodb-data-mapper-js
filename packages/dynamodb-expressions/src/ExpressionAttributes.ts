@@ -1,18 +1,14 @@
 import {AttributePath} from "./AttributePath";
 import {AttributeValue} from './AttributeValue';
 import {Marshaller} from "@aws/dynamodb-auto-marshaller";
-import {
-    AttributeValue as AttributeValueModel,
-    ExpressionAttributeNameMap,
-    ExpressionAttributeValueMap,
-} from 'aws-sdk/clients/dynamodb';
+import { AttributeValue as AttributeValueModel } from '@aws-sdk/client-dynamodb';
 
 /**
  * An object that manages expression attribute name and value substitution.
  */
 export class ExpressionAttributes {
-    readonly names: ExpressionAttributeNameMap = {};
-    readonly values: ExpressionAttributeValueMap = {};
+    readonly names: Record<string, string> = {};
+    readonly values: Record<string, AttributeValueModel> = {};
     readonly marshaller = new Marshaller();
 
     private readonly nameMap: {[attributeName: string]: string} = {};

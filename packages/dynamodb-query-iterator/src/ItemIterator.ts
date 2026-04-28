@@ -1,5 +1,7 @@
 import { DynamoDbPaginatorInterface } from './DynamoDbPaginatorInterface';
-import { AttributeMap, ConsumedCapacity } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue, ConsumedCapacity } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
 
 if (Symbol && !Symbol.asyncIterator) {
     (Symbol as any).asyncIterator = Symbol.for("__@@asyncIterator__");

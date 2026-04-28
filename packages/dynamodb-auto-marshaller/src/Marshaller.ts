@@ -1,4 +1,6 @@
-import {AttributeMap, AttributeValue} from "aws-sdk/clients/dynamodb";
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
 import {BinarySet, BinaryValue} from "./BinarySet";
 import {isArrayBuffer} from "./isArrayBuffer";
 import {NumberValue} from "./NumberValue";
@@ -273,7 +275,7 @@ export class Marshaller {
 
     private marshallBinaryValue(binary: BinaryValue): AttributeValue|undefined {
         if (binary.byteLength > 0 || this.onEmpty === 'leave') {
-            return {B: binary};
+            return {B: binary as Uint8Array};
         }
 
         if (this.onEmpty === 'nullify') {
@@ -379,7 +381,7 @@ export class Marshaller {
         }
 
         if (values.length > 0 || this.onEmpty === 'leave') {
-            return {[tag]: values};
+            return {[tag]: values} as unknown as AttributeValue;
         }
 
         if (this.onEmpty === 'nullify') {

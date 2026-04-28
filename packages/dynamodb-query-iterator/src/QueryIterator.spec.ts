@@ -11,9 +11,7 @@ describe('QueryIterator', () => {
         promiseFunc.mockClear();
         promiseFunc.mockImplementation(() => Promise.resolve({Items: []}));
         mockDynamoDbClient.query.mockClear();
-        mockDynamoDbClient.query.mockImplementation(() => {
-            return {promise: promiseFunc};
-        });
+        mockDynamoDbClient.query.mockImplementation(() => promiseFunc());
     });
 
     it(
@@ -174,9 +172,8 @@ describe('QueryIterator', () => {
         }));
         const iterator = new QueryIterator(mockDynamoDbClient as any, {TableName: 'foo'});
 
-        for await (const _ of iterator) {
-            break
-        }
+        await iterator.next();
+        await iterator.return();
 
         await expect(iterator.next()).rejects.toMatchObject(new Error(
             'Iteration has been manually interrupted and may not be resumed'

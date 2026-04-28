@@ -36,25 +36,25 @@ describe('itemIdentifier', () => {
         () => {
             expect(
                 itemIdentifier(
-                    'table', 
-                    {DeleteRequest: {Key: {foo: {B: '🐎👱❤'}}}}
+                    'table',
+                    {DeleteRequest: {Key: {foo: {B: '🐎👱❤' as any}}}}
                 )
             ).toBe(
                 itemIdentifier(
-                    'table', 
+                    'table',
                     {DeleteRequest: {Key: {foo: {B: Uint8Array.from([240, 159, 144, 142, 240, 159, 145, 177, 226, 157, 164])}}}}
                 )
             );
 
             expect(
                 itemIdentifier(
-                    'table', 
-                    {DeleteRequest: {Key: {foo: {B: '🐎👱❤'}}}}
+                    'table',
+                    {DeleteRequest: {Key: {foo: {B: '🐎👱❤' as any}}}}
                 )
             ).toBe(
                 itemIdentifier(
-                    'table', 
-                    {DeleteRequest: {Key: {foo: {B: Uint8Array.from([240, 159, 144, 142, 240, 159, 145, 177, 226, 157, 164]).buffer}}}}
+                    'table',
+                    {DeleteRequest: {Key: {foo: {B: Uint8Array.from([240, 159, 144, 142, 240, 159, 145, 177, 226, 157, 164]).buffer as any}}}}
                 )
             );
         }
@@ -62,7 +62,7 @@ describe('itemIdentifier', () => {
 
     it('should throw when an invalid binary value is provided', () => {
         expect(
-            () => itemIdentifier('table', {PutRequest: {Item: {foo: {B: []}}}})
+            () => itemIdentifier('table', {PutRequest: {Item: {foo: {B: [] as any}}}})
         ).toThrow();
     });
 

@@ -9,7 +9,7 @@ export interface DocumentTypeOptions<T> {
     attributeName?: string;
 }
 
-export function embed<T>(
+export function embed<T extends {[key: string]: any}>(
     documentConstructor: ZeroArgumentsConstructor<T>,
     {attributeName, defaultProvider}: DocumentTypeOptions<T> = {}
 ): DocumentType {

@@ -63,7 +63,7 @@ describe('unmarshallItem', () => {
     describe('"any" (untyped) fields', () => {
         it('should marshall of untyped data', () => {
             const schema: Schema = {mixedList: {type: 'Any'}};
-            const input = {
+            const input: any = {
                 mixedList: {
                     L: [
                         {S: 'string'},
@@ -97,7 +97,7 @@ describe('unmarshallItem', () => {
               unwrapNumbers: true
             }
           };
-          const input = {
+          const input: any = {
               mixedList: {
                   L: [
                       {S: 'string'},

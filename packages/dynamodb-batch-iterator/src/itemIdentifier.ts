@@ -1,5 +1,8 @@
 import { WriteRequest } from './types';
-import { AttributeMap, BinaryAttributeValue } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
+type BinaryAttributeValue = Uint8Array;
 const bytes = require('utf8-bytes');
 
 /**
@@ -11,11 +14,11 @@ export function itemIdentifier(
 ): string {
     if (DeleteRequest) {
         return `${tableName}::delete::${
-            serializeKeyTypeAttributes(DeleteRequest.Key)
+            serializeKeyTypeAttributes(DeleteRequest.Key!)
         }`;
     } else if (PutRequest) {
         return `${tableName}::put::${
-            serializeKeyTypeAttributes(PutRequest.Item)
+            serializeKeyTypeAttributes(PutRequest.Item!)
         }`;
     }
     

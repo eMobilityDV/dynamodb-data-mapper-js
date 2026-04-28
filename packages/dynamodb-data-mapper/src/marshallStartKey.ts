@@ -1,5 +1,7 @@
 import { marshallValue, Schema } from '@aws/dynamodb-data-marshaller';
-import { Key } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type Key = Record<string, AttributeValue>;
 
 /**
  * @internal

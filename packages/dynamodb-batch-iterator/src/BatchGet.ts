@@ -1,8 +1,9 @@
 import { BatchGetOptions, PerTableOptions } from './BatchGetOptions';
 import { BatchOperation } from './BatchOperation';
 import { SyncOrAsyncIterable, TableState } from './types';
-import { AttributeMap, BatchGetItemInput } from 'aws-sdk/clients/dynamodb';
-import DynamoDB = require('aws-sdk/clients/dynamodb');
+import { AttributeValue, BatchGetItemInput, DynamoDB } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
 
 export const MAX_READ_BATCH_SIZE = 100;
 
@@ -48,21 +49,21 @@ export class BatchGet extends BatchOperation<AttributeMap> {
 
         while (this.toSend.length > 0) {
             const [tableName, item] = this.toSend.shift() as [string, AttributeMap];
-            if (operationInput.RequestItems[tableName] === undefined) {
+            if (operationInput.RequestItems![tableName] === undefined) {
                 const {
                     projection,
                     consistentRead,
                     attributeNames,
                 } = this.state[tableName];
 
-                operationInput.RequestItems[tableName] = {
+                operationInput.RequestItems![tableName] = {
                     Keys: [],
                     ConsistentRead: consistentRead,
                     ProjectionExpression: projection,
                     ExpressionAttributeNames: attributeNames,
                 };
             }
-            operationInput.RequestItems[tableName].Keys.push(item);
+            operationInput.RequestItems![tableName].Keys!.push(item);
 
             if (++batchSize === this.batchSize) {
                 break;
@@ -72,12 +73,12 @@ export class BatchGet extends BatchOperation<AttributeMap> {
         const {
             Responses = {},
             UnprocessedKeys = {},
-        } = await this.client.batchGetItem(operationInput).promise();
+        } = await this.client.batchGetItem(operationInput);
 
         const unprocessedTables = new Set<string>();
         for (const table of Object.keys(UnprocessedKeys)) {
             unprocessedTables.add(table);
-            this.handleThrottled(table, UnprocessedKeys[table].Keys);
+            this.handleThrottled(table, UnprocessedKeys[table].Keys as AttributeMap[]);
         }
 
         this.movePendingToThrottled(unprocessedTables);

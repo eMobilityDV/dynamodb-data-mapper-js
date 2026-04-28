@@ -2,15 +2,18 @@
   "compilerOptions": {
     "target": "es5",
     "lib": [
+      "dom",
       "es5",
       "es2015.iterable",
       "es2015.promise",
       "es2015.collection",
-      "es2015.symbol.wellknown"
+      "es2015.symbol.wellknown",
+      "es2018"
     ],
     "downlevelIteration": true,
     "importHelpers": true,
     "module": "commonjs",
+    "skipLibCheck": true,
     "strict": true,
     "declaration": true,
     "rootDir": "./src",

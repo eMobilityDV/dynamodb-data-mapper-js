@@ -2,7 +2,9 @@ import { Schema } from './Schema';
 import { SchemaType } from './SchemaType';
 import { InvalidValueError } from './InvalidValueError';
 import { InvalidSchemaError } from './InvalidSchemaError';
-import { AttributeMap, AttributeValue } from 'aws-sdk/clients/dynamodb';
+import { AttributeValue } from '@aws-sdk/client-dynamodb';
+
+type AttributeMap = Record<string, AttributeValue>;
 import {
     BinarySet,
     BinaryValue,
@@ -305,7 +307,7 @@ function marshallSet<InputType, MarshalledElementType>(
         return {NULL: true};
     }
 
-    return {[setTag]: collected};
+    return {[setTag]: collected} as unknown as AttributeValue;
 }
 
 function isArrayBuffer(arg: any): arg is ArrayBuffer {
