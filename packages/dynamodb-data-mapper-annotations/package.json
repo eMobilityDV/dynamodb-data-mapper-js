@@ -30,7 +30,7 @@
   },
   "license": "Apache-2.0",
   "publishConfig": {
-    "@k2mobility:registry": "https://abb-dx-487403093539.d.codeartifact.eu-central-1.amazonaws.com/npm/k2mobility/"
+    "@k2mobility:registry": "https://k2mobility-346404501939.d.codeartifact.eu-central-1.amazonaws.com/npm/dynamodb-data-mapper-js/"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
