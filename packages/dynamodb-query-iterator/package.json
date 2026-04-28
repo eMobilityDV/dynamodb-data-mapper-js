@@ -1,5 +1,5 @@
 {
-  "name": "@aws/dynamodb-query-iterator",
+  "name": "@k2mobility/dynamodb-query-iterator",
   "version": "0.7.1",
   "description": "Abstraction for DynamoDB queries and scans that handles pagination and parallel worker coordination",
   "keywords": [
@@ -27,6 +27,9 @@
     "email": "aws-sdk-js@amazon.com"
   },
   "license": "Apache-2.0",
+  "publishConfig": {
+    "@k2mobility:registry": "https://abb-dx-487403093539.d.codeartifact.eu-central-1.amazonaws.com/npm/k2mobility/"
+  },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@types/jest": "^29.5.14",

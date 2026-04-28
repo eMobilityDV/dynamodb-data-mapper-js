@@ -1,5 +1,5 @@
 {
-  "name": "@aws/dynamodb-auto-marshaller",
+  "name": "@k2mobility/dynamodb-auto-marshaller",
   "version": "0.7.1",
   "description": "A data marshaller that converts JavaScript types into Amazon DynamoDB AttributeValues",
   "keywords": [
@@ -27,6 +27,9 @@
     "email": "aws-sdk-js@amazon.com"
   },
   "license": "Apache-2.0",
+  "publishConfig": {
+    "@k2mobility:registry": "https://abb-dx-487403093539.d.codeartifact.eu-central-1.amazonaws.com/npm/k2mobility/"
+  },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@types/jest": "^29.5.14",

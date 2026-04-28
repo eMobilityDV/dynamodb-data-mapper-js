@@ -1,7 +1,7 @@
 {
-  "name": "@aws/dynamodb-data-mapper-annotations",
+  "name": "@k2mobility/dynamodb-data-mapper-annotations",
   "version": "0.7.3",
-  "description": "Annotations providing easy integration between TypeScript domain objects and the @aws/dynamodb-data-mapper library",
+  "description": "Annotations providing easy integration between TypeScript domain objects and the @k2mobility/dynamodb-data-mapper library",
   "keywords": [
     "aws",
     "dynamodb"
@@ -29,6 +29,9 @@
     "email": "aws-sdk-js@amazon.com"
   },
   "license": "Apache-2.0",
+  "publishConfig": {
+    "@k2mobility:registry": "https://abb-dx-487403093539.d.codeartifact.eu-central-1.amazonaws.com/npm/k2mobility/"
+  },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@types/jest": "^29.5.14",
@@ -39,9 +42,9 @@
     "typescript": "^4.9"
   },
   "dependencies": {
-    "@aws/dynamodb-auto-marshaller": "^0.7.1",
-    "@aws/dynamodb-data-mapper": "^0.7.3",
-    "@aws/dynamodb-data-marshaller": "^0.7.3",
+    "@k2mobility/dynamodb-auto-marshaller": "^0.7.1",
+    "@k2mobility/dynamodb-data-mapper": "^0.7.3",
+    "@k2mobility/dynamodb-data-marshaller": "^0.7.3",
     "reflect-metadata": "^0.1.10",
     "tslib": "^2.0",
     "uuid": "^3.0.0"

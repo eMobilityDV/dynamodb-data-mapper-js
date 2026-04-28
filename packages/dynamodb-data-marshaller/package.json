@@ -1,5 +1,5 @@
 {
-  "name": "@aws/dynamodb-data-marshaller",
+  "name": "@k2mobility/dynamodb-data-marshaller",
   "version": "0.7.3",
   "description": "A schema-based data marshaller for Amazon DynamoDB",
   "keywords": [
@@ -27,6 +27,9 @@
     "email": "aws-sdk-js@amazon.com"
   },
   "license": "Apache-2.0",
+  "publishConfig": {
+    "@k2mobility:registry": "https://abb-dx-487403093539.d.codeartifact.eu-central-1.amazonaws.com/npm/k2mobility/"
+  },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@types/jest": "^29.5.14",
@@ -36,8 +39,8 @@
     "typescript": "^4.9"
   },
   "dependencies": {
-    "@aws/dynamodb-auto-marshaller": "^0.7.1",
-    "@aws/dynamodb-expressions": "^0.7.3",
+    "@k2mobility/dynamodb-auto-marshaller": "^0.7.1",
+    "@k2mobility/dynamodb-expressions": "^0.7.3",
     "tslib": "^2.0",
     "utf8-bytes": "^0.0.1"
   },
