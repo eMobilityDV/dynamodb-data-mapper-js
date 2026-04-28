@@ -50,5 +50,6 @@
   },
   "peerDependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0"
-  }
+  },
+  "gitHead": "e77bef9755a28aa0bbbc3cd3441799140550e1cb"
 }
