@@ -1,4 +1,4 @@
-import { ConditionExpression } from '@aws/dynamodb-expressions';
+import { ConditionExpression } from '@k2mobility/dynamodb-expressions';
 
 export interface ExecuteUpdateExpressionOptions {
     /**

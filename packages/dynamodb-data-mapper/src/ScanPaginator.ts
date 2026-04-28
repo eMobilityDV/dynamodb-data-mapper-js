@@ -1,8 +1,8 @@
 import { buildScanInput } from './buildScanInput';
 import { SequentialScanOptions } from './namedParameters';
 import { Paginator } from './Paginator';
-import { ScanPaginator as BasePaginator } from '@aws/dynamodb-query-iterator';
-import { ZeroArgumentsConstructor } from '@aws/dynamodb-data-marshaller';
+import { ScanPaginator as BasePaginator } from '@k2mobility/dynamodb-query-iterator';
+import { ZeroArgumentsConstructor } from '@k2mobility/dynamodb-data-marshaller';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 /**

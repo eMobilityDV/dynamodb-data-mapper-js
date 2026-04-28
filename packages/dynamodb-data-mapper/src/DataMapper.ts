@@ -41,7 +41,7 @@ import {
     PerTableOptions,
     TableOptions,
     WriteRequest,
-} from '@aws/dynamodb-batch-iterator';
+} from '@k2mobility/dynamodb-batch-iterator';
 import {
     AttributeTypeMap,
     getSchemaName,
@@ -59,7 +59,7 @@ import {
     toSchemaName,
     unmarshallItem,
     ZeroArgumentsConstructor,
-} from '@aws/dynamodb-data-marshaller';
+} from '@k2mobility/dynamodb-data-marshaller';
 import {
     AttributePath,
     AttributeValue,
@@ -71,7 +71,7 @@ import {
     PathElement,
     serializeProjectionExpression,
     UpdateExpression,
-} from '@aws/dynamodb-expressions';
+} from '@k2mobility/dynamodb-expressions';
 import {
     AttributeDefinition,
     AttributeValue as DdbAttributeValue,

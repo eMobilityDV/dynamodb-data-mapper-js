@@ -11,13 +11,13 @@ import {
     ParallelScanPaginator as BasePaginator,
     ParallelScanState as BaseParallelScanState,
     ScanState as BaseScanState,
-} from '@aws/dynamodb-query-iterator';
+} from '@k2mobility/dynamodb-query-iterator';
 import {
     marshallKey,
     Schema,
     unmarshallItem,
     ZeroArgumentsConstructor,
-} from '@aws/dynamodb-data-marshaller';
+} from '@k2mobility/dynamodb-data-marshaller';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
 /**

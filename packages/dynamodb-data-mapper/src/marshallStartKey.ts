@@ -1,4 +1,4 @@
-import { marshallValue, Schema } from '@aws/dynamodb-data-marshaller';
+import { marshallValue, Schema } from '@k2mobility/dynamodb-data-marshaller';
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
 
 type Key = Record<string, AttributeValue>;

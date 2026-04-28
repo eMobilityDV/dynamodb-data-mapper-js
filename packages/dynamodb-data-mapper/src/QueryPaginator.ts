@@ -2,19 +2,19 @@ import { marshallStartKey } from './marshallStartKey';
 import { QueryOptions } from './namedParameters';
 import { Paginator } from './Paginator';
 import { getSchema, getTableName } from './protocols';
-import { QueryPaginator as BasePaginator } from '@aws/dynamodb-query-iterator';
+import { QueryPaginator as BasePaginator } from '@k2mobility/dynamodb-query-iterator';
 import {
     marshallConditionExpression,
     marshallProjectionExpression,
     ZeroArgumentsConstructor,
-} from '@aws/dynamodb-data-marshaller';
+} from '@k2mobility/dynamodb-data-marshaller';
 import {
     ConditionExpression,
     ConditionExpressionPredicate,
     ExpressionAttributes,
     isConditionExpression,
     isConditionExpressionPredicate,
-} from '@aws/dynamodb-expressions';
+} from '@k2mobility/dynamodb-expressions';
 import { DynamoDB, QueryInput } from '@aws-sdk/client-dynamodb';
 
 /**

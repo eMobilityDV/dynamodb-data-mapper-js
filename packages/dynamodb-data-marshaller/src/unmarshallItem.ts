@@ -7,7 +7,7 @@ import {
     ZeroArgumentsConstructor,
 } from "./SchemaType";
 import {InvalidSchemaError} from "./InvalidSchemaError";
-import {BinarySet, Marshaller} from "@aws/dynamodb-auto-marshaller";
+import {BinarySet, Marshaller} from "@k2mobility/dynamodb-auto-marshaller";
 import { AttributeValue } from '@aws-sdk/client-dynamodb';
 
 type AttributeMap = Record<string, AttributeValue>;

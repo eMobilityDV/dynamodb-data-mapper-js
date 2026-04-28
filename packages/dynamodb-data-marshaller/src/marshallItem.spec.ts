@@ -1,7 +1,7 @@
 import {marshallItem} from "./marshallItem";
 import {Schema} from "./Schema";
 import {CustomType} from "./SchemaType";
-import {BinarySet} from "@aws/dynamodb-auto-marshaller";
+import {BinarySet} from "@k2mobility/dynamodb-auto-marshaller";
 
 describe('marshallItem', () => {
     it('should serialize fields to their attributeName if provided', () => {

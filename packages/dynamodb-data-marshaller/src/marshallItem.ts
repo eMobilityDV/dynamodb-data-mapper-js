@@ -10,7 +10,7 @@ import {
     BinaryValue,
     Marshaller,
     NumberValueSet,
-} from '@aws/dynamodb-auto-marshaller';
+} from '@k2mobility/dynamodb-auto-marshaller';
 const bytes = require('utf8-bytes');
 
 /**

@@ -1,6 +1,6 @@
 import {AttributePath} from "./AttributePath";
 import {AttributeValue} from './AttributeValue';
-import {Marshaller} from "@aws/dynamodb-auto-marshaller";
+import {Marshaller} from "@k2mobility/dynamodb-auto-marshaller";
 import { AttributeValue as AttributeValueModel } from '@aws-sdk/client-dynamodb';
 
 /**

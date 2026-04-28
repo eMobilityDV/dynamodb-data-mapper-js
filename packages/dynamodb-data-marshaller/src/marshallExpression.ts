@@ -11,7 +11,7 @@ import {
     ExpressionAttributes,
     serializeConditionExpression,
     serializeProjectionExpression,
-} from '@aws/dynamodb-expressions';
+} from '@k2mobility/dynamodb-expressions';
 
 /**
  * A DynamoDB expression serialized to a string and accompanied by the name and
