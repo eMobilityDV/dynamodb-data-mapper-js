@@ -155,6 +155,15 @@ function metadataToSchemaType(
         }
     }
 
+    if (
+        type === 'Document' &&
+        !(rest as DocumentType).members &&
+        (rest as DocumentType).valueConstructor
+    ) {
+        (rest as DocumentType).members =
+            (rest as DocumentType).valueConstructor!.prototype[DynamoDbSchema];
+    }
+
     return {
         ...rest,
         type

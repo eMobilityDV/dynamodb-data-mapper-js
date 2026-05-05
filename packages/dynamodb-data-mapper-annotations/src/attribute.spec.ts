@@ -424,6 +424,25 @@ describe('attribute', () => {
             }
         );
 
+        it('should populate members when type Document is passed explicitly with valueConstructor', () => {
+            class Embedded {
+                get [DynamoDbSchema]() {
+                    return {id: {type: 'String'}};
+                }
+            }
+
+            (Reflect.getMetadata as any).mockImplementation(() => undefined);
+            const decorator = attribute({type: 'Document', valueConstructor: Embedded as any});
+            const target = Object.create(null);
+            decorator(target, 'property');
+
+            expect(target[DynamoDbSchema].property).toEqual({
+                type: 'Document',
+                members: {id: {type: 'String'}},
+                valueConstructor: Embedded,
+            });
+        });
+
         it('should treat arrays as collection types', () => {
             (Reflect.getMetadata as any).mockImplementation(() => Array);
             const decorator = attribute();
