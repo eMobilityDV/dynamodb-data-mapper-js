@@ -1,114 +1,95 @@
 import 'reflect-metadata';
-import { PropertyAnnotation } from './annotationShapes';
-import { METADATA_TYPE_KEY } from './constants';
-import { BinarySet, NumberValueSet } from "@k2mobility/dynamodb-auto-marshaller";
-import { DynamoDbSchema } from '@k2mobility/dynamodb-data-mapper';
+import {PropertyAnnotation} from './annotationShapes';
+import {METADATA_TYPE_KEY, PENDING_SCHEMA} from './constants';
+import {deriveBaseSchema, isNewDecoratorContext} from './schemaUtils';
+import {BinarySet, NumberValueSet} from "@k2mobility/dynamodb-auto-marshaller";
+import {DynamoDbSchema} from '@k2mobility/dynamodb-data-mapper';
 import {
     DocumentType,
     KeyableType,
-    Schema,
     SchemaType,
     SetType
 } from "@k2mobility/dynamodb-data-marshaller";
 
 /**
  * Declare a property in a TypeScript class to be part of a DynamoDB schema.
- * Meant to be used as a property decorator in conjunction with TypeScript's
- * emitted type metadata. If used with in a project compiled with the
- * `emitDecoratorMetadata` option enabled, the type will infer most types from
- * the TypeScript source.
  *
- * Please note that TypeScript does not emit any metadata about the type
- * parameters supplied to generic types, so `Array<string>`, `[number, string]`,
- * and `MyClass[]` are all exposed as `Array` via the emitted metadata. Without
- * additional metadata, this annotation will treat all encountered arrays as
- * collections of untyped data. You may supply either a `members` declaration or
- * a `memberType` declaration to direct this annotation to treat a property as a
- * tuple or typed list, respectively.
+ * Supports both legacy `experimentalDecorators` mode and the TC39 Stage 3
+ * decorator standard (TypeScript 5+ without `experimentalDecorators`).
  *
- * Member type declarations are required for maps and sets.
+ * In legacy mode, type inference is automatic via `emitDecoratorMetadata`.
+ * In new TC39 mode, `emitDecoratorMetadata` is unavailable — unknown types
+ * fall back to `'Any'`. Pass an explicit `{ type: '...' }` for precise mapping.
  *
  * @see https://www.typescriptlang.org/docs/handbook/decorators.html
- * @see https://www.typescriptlang.org/docs/handbook/compiler-options.html
- * @see https://github.com/Microsoft/TypeScript/issues/2577
- *
- * @example
- *  export class MyClass {
- *      @attribute()
- *      id: string;
- *
- *      @attribute()
- *      subdocument?: MyOtherClass;
- *
- *      @attribute()
- *      untypedCollection?: Array<any>;
- *
- *      @attribute({memberType: {type: 'String'}})
- *      listOfStrings?: Array<string>;
- *
- *      @attribute({members: [{type: 'Boolean', type: 'String'}]})
- *      tuple?: [boolean, string];
- *
- *      @attribute({memberType: {type: 'String'}})
- *      mapStringString?: Map<string, string>;
- *
- *      @attribute()
- *      binary?: Uint8Array;
- *  }
  */
 export function attribute(
     parameters: Partial<SchemaType> = {}
 ): PropertyAnnotation {
-    return (target, propertyKey) => {
-        if (!Object.prototype.hasOwnProperty.call(target, DynamoDbSchema)) {
-            Object.defineProperty(
-                target,
-                DynamoDbSchema as any, // TypeScript complains about the use of symbols here, though it should be allowed
-                {value: deriveBaseSchema(target)}
-            );
-        }
-
-        const schemaType = metadataToSchemaType(
-            Reflect.getMetadata(METADATA_TYPE_KEY, target, propertyKey),
-            parameters
-        );
-
-        if (
-            (
-                (schemaType as KeyableType).keyType ||
-                (schemaType as KeyableType).indexKeyConfigurations
-            ) &&
-            [
-                'Binary',
-                'Custom',
-                'Date',
-                'Number',
-                'String',
-            ].indexOf(schemaType.type) < 0
-        ) {
-            throw new Error(
-                `Properties of type ${schemaType.type} may not be used as index or table keys. If you are relying on automatic type detection and have encountered this error, please ensure that the 'emitDecoratorMetadata' TypeScript compiler option is enabled. Please see https://www.typescriptlang.org/docs/handbook/decorators.html#metadata for more information on this compiler option.`
-            );
-        }
-
-        (target as any)[DynamoDbSchema][propertyKey] = schemaType;
-    };
-}
-
-function deriveBaseSchema(target: any): Schema {
-    if (target && typeof target === 'object') {
-        const prototype = Object.getPrototypeOf(target);
-        if (prototype) {
-            return {
-                ...deriveBaseSchema(prototype),
-                ...Object.prototype.hasOwnProperty.call(prototype, DynamoDbSchema)
-                    ? prototype[DynamoDbSchema]
-                    : {}
+    return (targetOrValue: any, contextOrKey: any) => {
+        if (isNewDecoratorContext(contextOrKey)) {
+            const context = contextOrKey as {
+                name: string | symbol;
+                metadata: Record<PropertyKey, unknown>;
             };
-        }
-    }
 
-    return {};
+            const schemaType = metadataToSchemaType(undefined, parameters);
+
+            if (
+                (
+                    (schemaType as KeyableType).keyType ||
+                    (schemaType as KeyableType).indexKeyConfigurations
+                ) &&
+                ['Binary', 'Custom', 'Date', 'Number', 'String'].indexOf(schemaType.type) < 0
+            ) {
+                throw new Error(
+                    `Properties of type ${schemaType.type} may not be used as index or table keys.`
+                );
+            }
+
+            if (!context.metadata[PENDING_SCHEMA]) {
+                (context.metadata as any)[PENDING_SCHEMA] = {};
+            }
+            (context.metadata[PENDING_SCHEMA] as any)[context.name] = schemaType;
+        } else {
+            // Legacy experimentalDecorators mode
+            const target = targetOrValue;
+            const propertyKey = contextOrKey as string | symbol;
+
+            if (!Object.prototype.hasOwnProperty.call(target, DynamoDbSchema)) {
+                Object.defineProperty(
+                    target,
+                    DynamoDbSchema as any,
+                    {value: deriveBaseSchema(target)}
+                );
+            }
+
+            const schemaType = metadataToSchemaType(
+                Reflect.getMetadata(METADATA_TYPE_KEY, target, propertyKey),
+                parameters
+            );
+
+            if (
+                (
+                    (schemaType as KeyableType).keyType ||
+                    (schemaType as KeyableType).indexKeyConfigurations
+                ) &&
+                [
+                    'Binary',
+                    'Custom',
+                    'Date',
+                    'Number',
+                    'String',
+                ].indexOf(schemaType.type) < 0
+            ) {
+                throw new Error(
+                    `Properties of type ${schemaType.type} may not be used as index or table keys. If you are relying on automatic type detection and have encountered this error, please ensure that the 'emitDecoratorMetadata' TypeScript compiler option is enabled. Please see https://www.typescriptlang.org/docs/handbook/decorators.html#metadata for more information on this compiler option.`
+                );
+            }
+
+            (target as any)[DynamoDbSchema][propertyKey] = schemaType;
+        }
+    };
 }
 
 function metadataToSchemaType(
@@ -187,12 +168,6 @@ function metadataToSchemaType(
  * This function checks if the provided constructor is or extends the built-in
  * `ArrayBuffer` constructor, the `DataView` constructor, or any `TypedArray`
  * constructor.
- *
- * This function will need to be modified if new binary types are added to
- * JavaScript (e.g., the `Int64Array` or `Uint64Array` discussed in
- * {@link https://github.com/tc39/proposal-bigint the BigInt TC39 proposal}.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/API/ArrayBufferView
  */
 function isBinaryType(arg: any): boolean {
     return arg === Uint8Array || arg.prototype instanceof Uint8Array ||

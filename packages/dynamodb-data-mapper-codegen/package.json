@@ -1,0 +1,40 @@
+{
+  "name": "@k2mobility/dynamodb-data-mapper-codegen",
+  "version": "0.1.0",
+  "description": "CLI to rewrite DynamoDB decorator arguments with explicit TypeScript-inferred types",
+  "keywords": [
+    "aws",
+    "dynamodb",
+    "codegen",
+    "migration"
+  ],
+  "bin": {
+    "dynamodb-data-mapper-codegen": "./build/cli.js"
+  },
+  "main": "./build/migrator.js",
+  "types": "./build/migrator.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "pretest": "tsc -p tsconfig.test.json",
+    "test": "jest \"build/(.+).spec.js\""
+  },
+  "author": {
+    "name": "AWS SDK for JavaScript Team",
+    "email": "aws-sdk-js@amazon.com"
+  },
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "@k2mobility:registry": "https://k2mobility-346404501939.d.codeartifact.eu-central-1.amazonaws.com/npm/dynamodb-data-mapper-js/"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "ts-morph": "^25.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^18.0.0",
+    "jest": "^29.7.0",
+    "typescript": "^5.0"
+  }
+}

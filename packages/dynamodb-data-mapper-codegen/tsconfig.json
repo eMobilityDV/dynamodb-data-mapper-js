@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "lib": ["es2019"],
+    "module": "commonjs",
+    "strict": true,
+    "noUnusedLocals": true,
+    "declaration": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "rootDir": "./src",
+    "outDir": "./build"
+  }
+}

@@ -1,5 +1,5 @@
 import {attribute} from './attribute';
-import {METADATA_TYPE_KEY} from './constants';
+import {METADATA_TYPE_KEY, PENDING_SCHEMA} from './constants';
 import {BinarySet, NumberValueSet} from "@k2mobility/dynamodb-auto-marshaller";
 import {DynamoDbSchema} from '@k2mobility/dynamodb-data-mapper';
 import {isSchema, SchemaType} from '@k2mobility/dynamodb-data-marshaller';
@@ -121,6 +121,44 @@ describe('attribute', () => {
             prop: {type: 'String'},
             otherProp: {type: 'Number'},
             yetAnotherProp: {type: 'Boolean'},
+        });
+    });
+
+    describe('new TC39 decorator mode', () => {
+        it('should accumulate schema in context.metadata', () => {
+            const metadata: Record<PropertyKey, unknown> = {};
+            attribute({type: 'String'})(
+                undefined,
+                {kind: 'field', name: 'myProp', metadata}
+            );
+
+            expect((metadata as any)[PENDING_SCHEMA]).toEqual({
+                myProp: {type: 'String'},
+            });
+        });
+
+        it('should default to type Any when no type is provided', () => {
+            const metadata: Record<PropertyKey, unknown> = {};
+            attribute()(undefined, {kind: 'field', name: 'myProp', metadata});
+
+            expect((metadata as any)[PENDING_SCHEMA].myProp).toEqual({type: 'Any'});
+        });
+
+        it('should accumulate multiple properties independently', () => {
+            const metadata: Record<PropertyKey, unknown> = {};
+            attribute({type: 'String'})(undefined, {kind: 'field', name: 'a', metadata});
+            attribute({type: 'Number'})(undefined, {kind: 'field', name: 'b', metadata});
+
+            expect((metadata as any)[PENDING_SCHEMA]).toEqual({
+                a: {type: 'String'},
+                b: {type: 'Number'},
+            });
+        });
+
+        it('should throw if a keyType is set on an invalid type', () => {
+            const metadata: Record<PropertyKey, unknown> = {};
+            const decorator = attribute({type: 'Boolean', keyType: 'HASH'} as any);
+            expect(() => decorator(undefined, {kind: 'field', name: 'id', metadata})).toThrow();
         });
     });
 
