@@ -1,5 +1,5 @@
 import { Node, ObjectLiteralExpression, SourceFile } from 'ts-morph';
-import { PROPERTY_DECORATORS, SKIP_DECORATORS } from './constants';
+import { DATA_MAPPER_PKG, PROPERTY_DECORATORS, SKIP_DECORATORS } from './constants';
 import { TypeMapper } from './typeMapper';
 import { UnresolvedField } from './types';
 
@@ -43,21 +43,26 @@ export class FileRewriter {
 
                     const typeStr = result.type;
                     const memberTypeStr = (result.kind === 'set' || result.kind === 'list') ? result.memberType : undefined;
-                    const valueConstructorStr = result.kind === 'document' ? result.valueConstructorName : undefined;
 
-                    if (args.length === 0) {
+                    // Bug 2: Document → embed(ClassName) so members are populated at runtime
+                    if (result.kind === 'document') {
+                        if (args.length > 0) callExpr.removeArgument(0);
+                        callExpr.addArgument(`embed(${result.valueConstructorName})`);
+                        this.ensureEmbedImported(sf);
+                    } else if (args.length === 0) {
                         const props: string[] = [`type: '${typeStr}'`];
-                        if (memberTypeStr) props.push(`memberType: '${memberTypeStr}'`);
-                        if (valueConstructorStr) props.push(`valueConstructor: ${valueConstructorStr}`);
+                        if (result.kind === 'set' && memberTypeStr) props.push(`memberType: '${memberTypeStr}'`);
+                        // Bug 1: List memberType must be a SchemaType object, not a string literal
+                        if (result.kind === 'list' && memberTypeStr) props.push(`memberType: { type: '${memberTypeStr}' }`);
                         callExpr.addArgument(`{ ${props.join(', ')} }`);
                     } else {
                         const objLit = args[0] as ObjectLiteralExpression;
                         objLit.insertPropertyAssignment(0, { name: 'type', initializer: `'${typeStr}'` });
-                        if (memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
+                        if (result.kind === 'set' && memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
                             objLit.addPropertyAssignment({ name: 'memberType', initializer: `'${memberTypeStr}'` });
                         }
-                        if (valueConstructorStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'valueConstructor')) {
-                            objLit.addPropertyAssignment({ name: 'valueConstructor', initializer: valueConstructorStr });
+                        if (result.kind === 'list' && memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
+                            objLit.addPropertyAssignment({ name: 'memberType', initializer: `{ type: '${memberTypeStr}' }` });
                         }
                     }
                 }
@@ -90,6 +95,19 @@ export class FileRewriter {
             }
         }
         return results;
+    }
+
+    private ensureEmbedImported(sf: SourceFile): void {
+        const existing = sf.getImportDeclarations().find(
+            d => d.getModuleSpecifierValue() === DATA_MAPPER_PKG
+        );
+        if (existing) {
+            if (!existing.getNamedImports().some(i => i.getName() === 'embed')) {
+                existing.addNamedImport('embed');
+            }
+        } else {
+            sf.addImportDeclaration({ moduleSpecifier: DATA_MAPPER_PKG, namedImports: ['embed'] });
+        }
     }
 
     private static hasPropertyInObjectLiteral(objLit: ObjectLiteralExpression, name: string): boolean {

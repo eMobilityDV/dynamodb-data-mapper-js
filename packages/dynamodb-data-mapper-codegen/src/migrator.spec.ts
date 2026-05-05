@@ -180,15 +180,16 @@ function attribute(p?: any) { return () => {}; }
     });
 
     describe('Record type mapping', () => {
-        it('maps Record<string, string> to Map and warns', () => {
+        it('maps Record<string, string> to Any (plain object round-trip)', () => {
             const { texts, warnings } = migrate({
                 'test.ts': `
 class Foo { @attribute() meta?: Record<string, string>; }
 function attribute(p?: any) { return () => {}; }
 `,
             });
-            expect(texts['test.ts']).toContain("type: 'Map'");
-            expect(warnings.some(w => w.includes('memberType manually'))).toBe(true);
+            expect(texts['test.ts']).toContain("type: 'Any'");
+            expect(texts['test.ts']).not.toContain("type: 'Map'");
+            expect(warnings.some(w => w.includes('memberType manually'))).toBe(false);
         });
     });
 
@@ -212,7 +213,8 @@ function attribute(p?: any) { return () => {}; }
 `,
             });
             expect(texts['test.ts']).toContain("type: 'List'");
-            expect(texts['test.ts']).toContain("memberType: 'String'");
+            expect(texts['test.ts']).toContain("memberType: { type: 'String' }");
+            expect(texts['test.ts']).not.toContain("memberType: 'String'");
         });
 
         it('adds type: List when memberType already present for Array', () => {
@@ -335,7 +337,7 @@ function rangeKey(p?: any) { return () => {}; }
     });
 
     describe('Document type', () => {
-        it('maps class reference to Document type with valueConstructor', () => {
+        it('maps class reference to embed(ClassName)', () => {
             const { texts } = migrate({
                 'test.ts': `
 function attribute(p?: any) { return () => {}; }
@@ -343,8 +345,9 @@ class Author { @attribute() name?: string; }
 class Post { @attribute() author?: Author; }
 `,
             });
-            expect(texts['test.ts']).toContain("type: 'Document'");
-            expect(texts['test.ts']).toContain('valueConstructor: Author');
+            expect(texts['test.ts']).toContain('embed(Author)');
+            expect(texts['test.ts']).not.toContain("type: 'Document'");
+            expect(texts['test.ts']).not.toContain('valueConstructor: Author');
         });
 
         it('injects @schema() on embedded class without @table or @schema', () => {
@@ -378,8 +381,9 @@ export class Person { @attribute() address?: Address; }
             const fileRewriter = new FileRewriter(new TypeMapper(registry));
             fileRewriter.rewrite(rootFile);
 
-            expect(rootFile.getFullText()).toContain("type: 'Document'");
-            expect(rootFile.getFullText()).toContain('valueConstructor: Address');
+            expect(rootFile.getFullText()).toContain('embed(Address)');
+            expect(rootFile.getFullText()).not.toContain("type: 'Document'");
+            expect(rootFile.getFullText()).not.toContain('valueConstructor: Address');
         });
 
         it('does not inject @schema() on class already decorated with @table', () => {
@@ -394,6 +398,96 @@ class Post { @attribute() author?: Author; }
             });
             const tableCount = (texts['test.ts'].match(/@table\(/g) ?? []).length;
             expect(tableCount).toBe(1);
+        });
+    });
+
+    describe('List member type (object form)', () => {
+        it('Array<string> generates memberType as object { type: String }', () => {
+            const { texts } = migrate({
+                'test.ts': `
+class Foo { @attribute() items?: Array<string>; }
+function attribute(p?: any) { return () => {}; }
+`,
+            });
+            expect(texts['test.ts']).toContain("memberType: { type: 'String' }");
+            expect(texts['test.ts']).not.toContain("memberType: 'String'");
+        });
+
+        it('Array<number> generates memberType as object { type: Number }', () => {
+            const { texts } = migrate({
+                'test.ts': `
+class Foo { @attribute() counts?: Array<number>; }
+function attribute(p?: any) { return () => {}; }
+`,
+            });
+            expect(texts['test.ts']).toContain("memberType: { type: 'Number' }");
+            expect(texts['test.ts']).not.toContain("memberType: 'Number'");
+        });
+
+        it('Array<Uint8Array> generates memberType as object { type: Binary }', () => {
+            const { texts } = migrate({
+                'test.ts': `
+class Foo { @attribute() blobs?: Array<Uint8Array>; }
+function attribute(p?: any) { return () => {}; }
+`,
+            });
+            expect(texts['test.ts']).toContain("memberType: { type: 'Binary' }");
+            expect(texts['test.ts']).not.toContain("memberType: 'Binary'");
+        });
+    });
+
+    describe('Document embed()', () => {
+        it('generates embed(ClassName) and adds embed import', () => {
+            const { texts } = migrate({
+                'test.ts': `
+function attribute(p?: any) { return () => {}; }
+class Comment { @attribute() body?: string; }
+class Post { @attribute() comment?: Comment; }
+`,
+            });
+            expect(texts['test.ts']).toContain('embed(Comment)');
+            expect(texts['test.ts']).toMatch(/from ["']@k2mobility\/dynamodb-data-mapper["']/);
+        });
+
+        it('adds embed to existing @k2mobility/dynamodb-data-mapper import', () => {
+            const { texts } = migrate({
+                'test.ts': `
+import { DataMapper } from '@k2mobility/dynamodb-data-mapper';
+function attribute(p?: any) { return () => {}; }
+class Tag { @attribute() label?: string; }
+class Post { @attribute() tag?: Tag; }
+`,
+            });
+            expect(texts['test.ts']).toContain('embed(Tag)');
+            // Verify embed was added to the EXISTING import, not a new import statement
+            const importStatements = (texts['test.ts'].match(/["']@k2mobility\/dynamodb-data-mapper["']/g) ?? []).length;
+            expect(importStatements).toBe(1);
+        });
+    });
+
+    describe('Record vs Map type mapping', () => {
+        it('Record<string, string> generates type: Any (plain object)', () => {
+            const { texts, warnings } = migrate({
+                'test.ts': `
+class Foo { @attribute() data?: Record<string, string>; }
+function attribute(p?: any) { return () => {}; }
+`,
+            });
+            expect(texts['test.ts']).toContain("type: 'Any'");
+            expect(texts['test.ts']).not.toContain("type: 'Map'");
+            expect(warnings.some(w => w.includes('memberType manually'))).toBe(false);
+        });
+
+        it('Map<string, string> still generates type: Map', () => {
+            const { texts, warnings } = migrate({
+                'test.ts': `
+class Foo { @attribute({ memberType: { type: 'String' } }) index?: Map<string, string>; }
+function attribute(p?: any) { return () => {}; }
+`,
+            });
+            expect(texts['test.ts']).toContain("type: 'Map'");
+            expect(texts['test.ts']).not.toContain("type: 'Any'");
+            expect(warnings.some(w => w.includes('memberType manually'))).toBe(true);
         });
     });
 });

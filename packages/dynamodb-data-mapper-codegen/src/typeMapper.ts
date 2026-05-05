@@ -77,7 +77,7 @@ export class TypeMapper {
         }
 
         if (type.getStringIndexType()) {
-            return { kind: 'map', type: 'Map', message: 'Record<K,V> — add memberType manually' };
+            return { kind: 'primitive', type: 'Any' };
         }
 
         const override = this.overrides[rawType.getText()];
