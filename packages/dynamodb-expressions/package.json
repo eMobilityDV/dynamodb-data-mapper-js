@@ -45,5 +45,5 @@
     "@k2mobility/dynamodb-auto-marshaller": "^0.7.1",
     "tslib": "^2.0"
   },
-  "gitHead": "e77bef9755a28aa0bbbc3cd3441799140550e1cb"
+  "gitHead": "8f9116fda1d05f2e56ef490cfcaaff97720dd6c9"
 }
