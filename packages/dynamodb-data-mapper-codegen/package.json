@@ -1,6 +1,6 @@
 {
   "name": "@k2mobility/dynamodb-data-mapper-codegen",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CLI to rewrite DynamoDB decorator arguments with explicit TypeScript-inferred types",
   "keywords": [
     "aws",
@@ -36,5 +36,6 @@
     "@types/node": "^18.0.0",
     "jest": "^29.7.0",
     "typescript": "^5.0"
-  }
+  },
+  "gitHead": "8f9116fda1d05f2e56ef490cfcaaff97720dd6c9"
 }
