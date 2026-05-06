@@ -180,15 +180,15 @@ function attribute(p?: any) { return () => {}; }
     });
 
     describe('Record type mapping', () => {
-        it('maps Record<string, string> to Any (plain object round-trip)', () => {
+        it('maps Record<string, string> to Map with memberType String', () => {
             const { texts, warnings } = migrate({
                 'test.ts': `
 class Foo { @attribute() meta?: Record<string, string>; }
 function attribute(p?: any) { return () => {}; }
 `,
             });
-            expect(texts['test.ts']).toContain("type: 'Any'");
-            expect(texts['test.ts']).not.toContain("type: 'Map'");
+            expect(texts['test.ts']).toContain("type: 'Map'");
+            expect(texts['test.ts']).toContain("memberType: { type: 'String' }");
             expect(warnings.some(w => w.includes('memberType manually'))).toBe(false);
         });
     });
@@ -466,15 +466,15 @@ class Post { @attribute() tag?: Tag; }
     });
 
     describe('Record vs Map type mapping', () => {
-        it('Record<string, string> generates type: Any (plain object)', () => {
+        it('Record<string, string> generates type: Map with memberType String', () => {
             const { texts, warnings } = migrate({
                 'test.ts': `
 class Foo { @attribute() data?: Record<string, string>; }
 function attribute(p?: any) { return () => {}; }
 `,
             });
-            expect(texts['test.ts']).toContain("type: 'Any'");
-            expect(texts['test.ts']).not.toContain("type: 'Map'");
+            expect(texts['test.ts']).toContain("type: 'Map'");
+            expect(texts['test.ts']).toContain("memberType: { type: 'String' }");
             expect(warnings.some(w => w.includes('memberType manually'))).toBe(false);
         });
 

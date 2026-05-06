@@ -76,8 +76,13 @@ export class TypeMapper {
             }
         }
 
-        if (type.getStringIndexType()) {
-            return { kind: 'primitive', type: 'Any' };
+        const indexValueType = type.getStringIndexType();
+        if (indexValueType) {
+            const memberType = this.mapScalarMemberType(indexValueType.getNonNullableType());
+            if (memberType) {
+                return { kind: 'map', type: 'Map', memberType };
+            }
+            return { kind: 'map', type: 'Map', message: 'Record<string,V> with complex V — add memberType manually' };
         }
 
         const override = this.overrides[rawType.getText()];

@@ -37,12 +37,13 @@ export class FileRewriter {
 
                     const result = this.typeMapper.map(prop.getType());
 
-                    if (result.kind === 'any' || result.kind === 'map' || result.kind === 'set-warn' || result.kind === 'collection') {
+                    if ((result.kind === 'any' || result.kind === 'set-warn' || result.kind === 'collection') ||
+                        (result.kind === 'map' && result.message)) {
                         warnings.push(`${sf.getFilePath()}:${prop.getStartLineNumber()}: ${result.message}`);
                     }
 
                     const typeStr = result.type;
-                    const memberTypeStr = (result.kind === 'set' || result.kind === 'list') ? result.memberType : undefined;
+                    const memberTypeStr = (result.kind === 'set' || result.kind === 'list' || result.kind === 'map') ? result.memberType : undefined;
 
                     // Bug 2: Document → embed(ClassName) so members are populated at runtime
                     if (result.kind === 'document') {
@@ -52,8 +53,7 @@ export class FileRewriter {
                     } else if (args.length === 0) {
                         const props: string[] = [`type: '${typeStr}'`];
                         if (result.kind === 'set' && memberTypeStr) props.push(`memberType: '${memberTypeStr}'`);
-                        // Bug 1: List memberType must be a SchemaType object, not a string literal
-                        if (result.kind === 'list' && memberTypeStr) props.push(`memberType: { type: '${memberTypeStr}' }`);
+                        if ((result.kind === 'list' || result.kind === 'map') && memberTypeStr) props.push(`memberType: { type: '${memberTypeStr}' }`);
                         callExpr.addArgument(`{ ${props.join(', ')} }`);
                     } else {
                         const objLit = args[0] as ObjectLiteralExpression;
@@ -61,7 +61,7 @@ export class FileRewriter {
                         if (result.kind === 'set' && memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
                             objLit.addPropertyAssignment({ name: 'memberType', initializer: `'${memberTypeStr}'` });
                         }
-                        if (result.kind === 'list' && memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
+                        if ((result.kind === 'list' || result.kind === 'map') && memberTypeStr && !FileRewriter.hasPropertyInObjectLiteral(objLit, 'memberType')) {
                             objLit.addPropertyAssignment({ name: 'memberType', initializer: `{ type: '${memberTypeStr}' }` });
                         }
                     }

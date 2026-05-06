@@ -15,7 +15,7 @@ export type TypeMapResult =
     | { kind: 'primitive'; type: string }
     | { kind: 'set'; type: 'Set'; memberType: string }
     | { kind: 'set-warn'; type: 'Set'; message: string }
-    | { kind: 'map'; type: 'Map'; message: string }
+    | { kind: 'map'; type: 'Map'; memberType?: string; message?: string }
     | { kind: 'list'; type: 'List'; memberType: string }
     | { kind: 'collection'; type: 'Collection'; message: string }
     | { kind: 'document'; type: 'Document'; valueConstructorName: string; classDecl?: ClassDeclaration; targetNeedsSchema: boolean }
